@@ -1,16 +1,22 @@
-#FROM golang:1.14-alpine AS build
+FROM golang:alpine AS builder
 
-#WORKDIR /src/
-#COPY main.go go.* /src/
-#RUN CGO_ENABLED=0 go build -o /bin/MyKeywords
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
-#FROM scratch
-#COPY --from=build /bin/MyKeywords /bin/MyKeywords
-#ENTRYPOINT ["/bin/MyKeywords"]
+WORKDIR /build
 
-FROM golang
+COPY main.go go.* ./
 
-COPY main.go go.* /src/
-WORKDIR /src/
-RUN CGO_ENABLED=0 go build -o /src/MyKeywords /src/main.go
-CMD ["/src/MyKeywords"]
+RUN go build -o main .
+
+WORKDIR /dist
+
+RUN cp /build/main .
+
+FROM scratch
+
+COPY --from=builder /dist .
+
+ENTRYPOINT ["/main"]
